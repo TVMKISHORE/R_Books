@@ -1,0 +1,255 @@
+---
+title: "Wrangling"
+author: "V M KISHORE"
+date: "2/9/2017"
+output: html_document
+---
+
+# Resource:
+https://www.rstudio.com/resources/webinars/data-wrangling-with-r-and-rstudio/
+https://github.com/rstudio/webinars/blob/master/05-Data-Wrangling-with-R-and-RStudio/wrangling-webinar.pdf
+
+**********************************************************************************************************
+tidyr and functions
+?gather()
+?spread()
+?seperate()
+?unite()
+
+dplyr and functions
+?select
+?flter
+?arrange
+?mutate
+?summarise
+?group_by
+**********************************************************************************************************
+
+## pratice libraries and datasets 
+```{r}
+#install.packages('dplyr')
+library(dplyr)
+
+#install.packages('tidyr')
+library(tidyr)
+
+#install.packages('devtools')
+#devtools::install_github("rstudio/EDAWR")
+library(EDAWR)
+
+# Datasets for practice
+#?strom
+#?pollution
+#?cases
+#?songs
+#?artists
+```
+
+
+```{r}
+#install.packages('ggplot2')
+library(ggplot2)
+
+data(diamonds)
+str(diamonds)
+```
+
+
+##When we have number of columns. The extra columns which will not fit on the screen will be displayed at the bottom. Very convenient to view large datasets.
+```{r}
+#This command is usefull
+tbl_df(diamonds)
+
+```
+
+##Just to view the diamonds dataset
+```{r}
+#View(diamonds)
+```
+
+##selecting the columns
+```{r}
+select(diamonds,cut)
+names(diamonds)
+select(diamonds,cut:depth)
+```
+
+also written the below way
+```{r}
+diamonds%>% select(cut:depth)
+
+```
+
+Selecting observations
+```{r}
+diamonds%>% filter(cut=='Ideal')
+
+diamonds$x %>%
+  round(2) %>%
+  mean()
+  
+```
+
+
+#tidyr package functions
+```{r}
+library(tidyr)
+cases
+gather(cases,"year","n",2:4)
+
+
+pollution
+spread(pollution,city,amount)
+spread(pollution,size,amount)
+
+
+```
+
+##spread diamonds dataset
+```{r}
+diamonds
+diamonds$row<-1:nrow(diamonds)   #To add explicit row numbers
+
+diamonds_d<-na.omit(diamonds)%>% 
+  select(row,color,price)%>% 
+  arrange(color)
+
+spread(diamonds_d,color,price)
+
+```
+
+
+##unite and seperate
+```{r}
+storms
+storms_sepdate<-separate(storms,date,c("year","month","day"),sep="-")
+```
+
+
+```{r}
+storms_sepdate
+storms_unite<-unite(storms_sepdate,"date",year,month,day,sep="-")
+```
+
+
+# dplyr
+Ways to access information
+1. Extract existing variables  select()
+2. Extract existing observatios    filter()
+3. Derive new variables        mutuate()
+4. Change unit of variance     summarise()
+
+```{r}
+storms%>% select(pressure,date)%>% filter(pressure>1000)
+```
+
+
+```{r}
+select(storms,pressure,date)
+```
+
+
+```{r}
+filter(storms,pressure>1000 & wind==110)
+```
+
+
+```{r}
+mutate(storms,ratio=pressure/wind,inverse=ratio**-1)
+```
+
+
+```{r}
+storms%>% summarise(mean=mean(pressure),variance=var(pressure),sd=sd(pressure))
+
+storms%>% 
+  mutate(ratio=pressure/wind)%>% 
+  select(storm,ratio)
+
+```
+
+
+```{r}
+arrange(diamonds,cut,color)
+arrange(storms,wind)
+arrange(storms,wind,pressure) 
+```
+
+
+##changing unit of variance  group_y()+summarise() . Changing the unit of analysis
+```{r}
+pollution
+pollution %>% 
+  group_by(city) %>% 
+  summarise(mean=mean(amount),sum=sum(amount),n=n())
+
+pollution %>% 
+    summarise(mean=mean(amount),sum=sum(amount),n=n())
+  
+
+```
+
+
+
+```{r}
+tb
+tb %>% 
+  group_by(country,year) %>% 
+  summarize(child_sum=sum(child),adult_sum=sum(adult))
+
+na.omit(tb) %>% 
+  group_by(country) %>% 
+  summarize(child_sum=sum(child),adult_sum=sum(adult))
+
+na.omit(tb) %>% 
+  group_by(country,year) %>% 
+  summarize(child=sum(child)) 
+
+na.omit(tb) %>% 
+  group_by(country,year) %>% 
+  summarize(child=sum(child)) %>% 
+  summarize(child=sum(child)) %>% 
+  summarize(child=sum(child)) 
+
+
+```
+
+
+
+##Joining data sets
+```{r}
+st1<-storms
+st2<-storms
+bind_rows(st1,st2)
+bind_cols(st1,st2)
+union(st1,st2)
+intersect(st1,st2)
+setdiff(st1,st2)
+```
+
+
+```{r}
+data(songs)
+data(artists)
+songs
+artists
+
+
+```
+
+
+```{r}
+left_join(songs,artists,by='name')
+right_join(songs,artists,by='name')
+inner_join(songs,artists,by='name')
+semi_join(songs,artists,by='name')    # Not actuallt a join but a lookup kind of thing. After lookup Return observations which are found
+anti_join(songs,artists,by='name')    # After lookup returns not found observations
+
+```
+
+```{r}
+#install.packages('nycflights13')
+library(nycflights13)
+
+```
+

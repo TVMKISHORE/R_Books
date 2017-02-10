@@ -1,0 +1,282 @@
+---
+title: "Psuedo_FB Analyzing single variable"
+author: "V M KISHORE"
+date: "1/31/2017"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+
+```
+
+
+load a tab seperated pseudo facebook data
+```{r}
+pf <- read.csv('pseudo_facebook.tsv',sep='\t')
+str(pf)
+
+```
+
+Scaling
+```{r}
+names(pf)
+qplot(x=dob_day, data=pf)
+qplot(x=dob_day, data=pf)+
+  scale_x_continuous(breaks=1:31)
+
+```
+
+
+Faceting
+```{r}
+qplot(x=dob_day, data=pf)+
+  scale_x_continuous(breaks=1:31)+
+facet_wrap(~dob_month,ncol=3)
+
+```
+
+
+
+Limiting the X axis. Here I jut limited the x axis data to 500 from zero(ie: friend count less than zero)
+```{r}
+qplot(x=friend_count,data=pf)+
+  scale_x_continuous(lim=c(0,500),breaks = seq(0,500,100))
+```
+
+Also can written as below
+```{r,echo=FALSE}
+qplot(x=friend_count,data=pf)+
+  scale_x_continuous(limits=c(0,500))
+
+```
+
+Setting the bin width 
+```{r}
+qplot(x=friend_count,data=pf,binwidth=30)+
+  scale_x_continuous(limits=c(0,500),breaks = seq(0,500,50))
+
+```
+
+
+Who has more friends Men or women(Use facter_wrap)
+```{r}
+qplot(x=friend_count,data=pf,binwidth=30)+
+  scale_x_continuous(limits=c(0,500),breaks = seq(0,500,50))+
+                       facet_wrap(~gender)
+
+```
+
+
+Omitting Na observations
+```{r,echo=FALSE}
+
+qplot(x=friend_count,data=subset(pf,!is.na(pf$gender)),binwidth=30)+
+  scale_x_continuous(limits=c(0,500),breaks = seq(0,500,50))+
+                       facet_wrap(~gender)
+
+```
+
+To omit all NA observations 
+```{r,echo=FALSE}
+qplot(x=friend_count,data=na.omit(pf),binwidth=30)+
+  scale_x_continuous(limits=c(0,500),breaks = seq(0,500,50))+
+                       facet_wrap(~gender)
+
+```
+
+Statistics by gender
+```{r}
+table(pf$gender)
+by(pf$friend_count,pf$gender,summary)
+```
+
+
+
+
+Tenure(How many data some one is using facebook)
+```{r}
+qplot(x=tenure, data=pf, binwidth=30, 
+      color=I('black'),fill=I('#099009'))
+qplot(x=tenure/365,data=pf,binwidth=1,
+      color=I('black'),fill=I('#099009'))  
+
+```
+
+
+
+A yearly view with quarterly bins
+```{r}
+qplot(x=tenure/365,data=pf,binwidth=.25,color=I('black'),fill=I('#F79420'))+
+scale_x_continuous(breaks=seq(1,7,1),limit=c(0,7)) 
+
+```
+
+
+Labeling plots(By default r tables col names as axis names of the plots)
+```{r}
+qplot(x=tenure/365,data=pf,binwidth=.25,color=I('black'),fill=I('#F79420'))+
+scale_x_continuous(breaks=seq(1,7,1),limit=c(0,7)) +
+  xlab('numberof years using facebook')+
+  ylab('number of users in sample')
+
+```
+
+
+User ages facet wrap by gender.
+```{r}
+qplot(x=age,data=na.omit(pf),binwidth=1,color=I('black'),fill=I('#5760AB'))+
+  facet_wrap(~gender)
+
+```
+
+
+
+Transforming data(Over dispersed data can be visualized in a better way)
+```{r}
+#install.packages('gridExtra') 
+library(gridExtra) 
+summary(log10(pf$friend_count+1))
+
+summary(log10(pf$friend_count+1))
+
+summary(sqrt(pf$friend_count+1))
+
+```
+
+
+
+```{r}
+noscale<-qplot(x=(friend_count),data=pf)
+
+logScale<-qplot(x=log10(friend_count),data=pf) 
+
+sqrtplot<-ggplot(aes(x=friend_count),data=pf)+geom_histogram()+scale_x_sqrt() 
+
+grid.arrange(noscale,logScale,sqrtplot,ncol=3)
+```
+
+
+Transformation data alternate solution
+```{r,echo=FALSE}
+p1 <-ggplot(aes(x=friend_count),data=pf)+geom_histogram()
+p2<-p1+scale_x_log10()
+p3<-p1+scale_x_sqrt()
+grid.arrange(p1,p2,p3)
+```
+
+
+Difference between the transformations wrapper an adding layer
+```{r}
+log_wraper<-ggplot(aes(x=log10(friend_count)),data=pf)+geom_histogram()
+log_layer<-ggplot(aes(x=friend_count),data=pf)+geom_histogram()+scale_x_log10()
+grid.arrange(log_wraper,log_layer,ncol=2)
+
+```
+
+
+
+
+###To compate distrubutiosn Frequency poligons(just before that a histogram)
+```{r}
+
+qplot(x= friend_count,data=subset(pf,is.na(gender)),
+  binwidth=10)+
+scale_x_continuous(lim=c(0,1000),breaks = seq(0, 1000,50)) + facet_wrap(~gender)
+
+ggplot(aes(x = friend_count), data = subset(pf, !is.na(gender))) + 
+  geom_freqpoly(aes(color = gender), binwidth=10) + 
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 50)) + 
+  xlab('Friend Count') + 
+  ylab('Percentage of users with that friend count')
+
+```
+
+
+But we really wanted to know who have more friends male or female(For this we have to take proportions .The below addition code y = ..count../sum(..count..) will take the proportions )
+```{r}
+ggplot(aes(x = friend_count, y = ..count../sum(..count..)), data = subset(pf, !is.na(gender))) + 
+  geom_freqpoly(aes(color = gender), binwidth=10) + 
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 50)) + 
+  xlab('Friend Count') + 
+  ylab('Percentage of users with that friend count')
+```
+
+
+
+
+
+Frequency polygon for www_likes(The advantage of log transfermation)
+```{r}
+
+qplot(x=www_likes ,
+     data = subset(pf,!is.na(gender)),
+     geom='freqpoly',color=gender)+
+     scale_x_continuous()
+     
+
+qplot(x=www_likes ,
+     data = subset(pf,!is.na(gender)),
+     geom='freqpoly',color=gender)+
+     scale_x_continuous()+
+     scale_x_log10()  
+
+```
+
+
+Summary for www-Likes
+```{r}
+by(pf$www_likes,pf$gender,summary)
+by(pf$www_likes,pf$gender,sum)
+
+```
+
+
+
+Box PLots
+```{r}
+qplot(x=gender, y=friend_count,data=subset(pf, !is.na(gender)),geom='boxplot')
+
+```
+
+
+Outlier : is just 1.5 times IQR distance from th emedian.set the limits to remove the outliers
+```{r}
+qplot(x=gender, y=friend_count,data=subset(pf, !is.na(gender)),geom='boxplot',ylim=c(0,1000)) 
+
+```
+
+
+Set the limits to remove the outliers
+```{r}
+qplot(x=gender, y=friend_count,data=subset(pf, !is.na(gender)),geom='boxplot')+
+scale_y_continuous(limits=c(0,1000))
+
+```
+
+
+
+to summarize the friend-counts by gender
+```{r}
+by(pf$friend_count,pf$gender,summary)
+```
+
+
+
+To match the graph details with the above statistics use the coord_cartesian function.
+This means , the data point we limit on y-axis is just for visualization not on actual calculation.
+```{r}
+qplot(x=gender, y=friend_count,data=subset(pf,!is.na(gender)),geom='boxplot')+
+  coord_cartesian(ylim=c(0,250))
+
+```
+
+
+On an average who initiated more friend request.(The answer is female)
+```{r}
+qplot(x=gender, y=friendships_initiated,data=subset(pf,!is.na(gender)),geom='boxplot')+
+  coord_cartesian(ylim=c(0,250))
+by(pf$friendships_initiated,pf$gender,summary)
+```
+
+
