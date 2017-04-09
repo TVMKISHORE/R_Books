@@ -1,0 +1,92 @@
+---
+title: "EDA many var"
+author: "V M KISHORE"
+date: "2/18/2017"
+output: html_document
+---
+Datasets related to this corse are available at the below given path.
+udacity-data-analysis-with-r/data/
+Udacity/Data Analysis with R/Lesson5/
+
+
+*A statistical exploration
+```{r}
+#read.csv('yogurt.csv')
+yo<-read.csv(url('https://raw.githubusercontent.com/pdelboca/udacity-data-analysis-with-r/master/data/yogurt.csv'))
+yo$id=as.factor(yo$id)
+nci<-read.csv(url('https://raw.githubusercontent.com/ryancheunggit/Udacity/master/Data%20Analysis%20with%20R/Lesson5/nci.tsv'))
+library(ggplot2)
+str(yo)
+qplot(x= price,data=yo,binwidth=1)
+```
+
+
+
+```{r}
+qplot(x= price,data=yo,binwidth=20)  #This has higher bios
+```
+
+```{r}
+summary(yo)
+```
+
+
+```{r}
+length(unique(yo$price))  # How many distinct prices are there
+table(yo$price)  # Table the distinct variables 
+```
+
+*Transforming and plotting
+```{r}
+# Variable aded to find all purchases for a single household.
+yo<-transform(yo,all.purchases=strawberry+blueberry+pina.colada+plain+mixed.berry+price)  
+qplot(x= all.purchases,data=yo,binwidth=1,fill=I('#099009'))
+ggplot(aes(x=time,y=price),data=yo)+
+  geom_jitter(alpha=1/4,shape=21,fill=I('#F79420'))
+
+```
+
+
+*When we have data like above graph, which is mostly constant, it is really intresting to explore by taking samples.
+```{r}
+
+set.seed(4231)
+sample.ids<-sample(levels(yo$id),16)
+ggplot(aes(x=time,y=price),data=subset(yo, id %in% sample.ids))+
+  facet_wrap(~id)+
+  geom_line()+
+  geom_point(aes(size=all.purchases),pch=1)
+
+```
+
+
+*scatterplot Matrices 
+```{r}
+install.packages('GGally')
+library(GGally)
+theme_set(theme_minimal(20))
+# set the seed for reproducible results
+set.seed(123)
+yo_subset<- yo[,3:9]
+ggpairs(yo_subset[sample.int(nrow(yo_subset),1000),])
+```
+
+
+*Creat Heat Maps
+```{r}
+
+library(reshape2)
+nci.long.samp<-melt(as.matrix(nci[1:200,]))
+names(nci.long.samp)<-c('gene','case','value')
+head(nci.long.samp)
+```
+
+
+```{r}
+#Make the heat map
+ggplot(aes(y=gene,x=case,fill=value),
+       data=nci.long.samp)+
+  geom_tile()+
+  scale_fill_gradientn(colors=colorRampPalette(c('blue','red'))(100))
+```
+
